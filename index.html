@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday!</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            display: flex;
+            justify-content: center; /* Centers everything together */
+            align-items: center;
+            height: 100vh;
+            gap: 2rem; /* Controls the exact gap between text and iPod */
+        }
+
+        #text-section {
+            flex: 1;
+            max-width: 380px; /* Keeps the text block from stretching too wide */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .typewriter-text {
+            font-size: 1.5rem;
+            line-height: 2.5;
+            min-height: 2.5rem;
+        }
+
+        #canvas-section {
+            flex: 1;
+            max-width: 400px;
+            height: 80vh; /* Gives the iPod plenty of vertical space */
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Responsive for Tablets and Phones */
+        @media (max-width: 800px) {
+            body {
+                flex-direction: column;
+                justify-content: flex-start;
+                gap: 1rem;
+                padding-top: 5vh;
+                overflow-y: auto; /* Allows scrolling on very small phones */
+            }
+            #text-section {
+                max-width: 85%;
+                height: auto;
+                align-items: flex-start; 
+                margin: 0 auto; /* Centers the text block on the screen */
+            }
+            .typewriter-text {
+                font-size: 1.2rem;
+                line-height: 2;
+                min-height: 2rem;
+            }
+            #canvas-section {
+                max-width: 90%;
+                height: 55vh;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="text-section"></div>
+    <div id="canvas-section">
+        <canvas id="ipodCanvas"></canvas>
+    </div>
+
+    <script>
+        // --- 1. TYPEWRITER EFFECT ---
+        const messages = [
+            "Hey you 💖",
+            "Happy Birthday 🎊",
+            "May God bless you 🎈",
+            "And give u many happiness 🌠",
+            "Just saying ... you're pretty awesome 🤍",
+            "Sending good vibes and maybe a wink 😉",
+            "Hope u have a great day today 💗"
+        ];
+
+        const textSection = document.getElementById('text-section');
+        let lineIndex = 0;
+        let charIndex = 0;
+
+        function typeWriter() {
+            if (lineIndex < messages.length) {
+                if (charIndex === 0) {
+                    const lineDiv = document.createElement('div');
+                    lineDiv.className = 'typewriter-text';
+                    lineDiv.id = 'line-' + lineIndex;
+                    textSection.appendChild(lineDiv);
+                }
+
+                const currentLine = messages[lineIndex];
+                
+                if (charIndex < currentLine.length) {
+                    document.getElementById('line-' + lineIndex).innerHTML += currentLine.charAt(charIndex);
+                    charIndex++;
+                    setTimeout(typeWriter, 80); 
+                } else {
+                    lineIndex++;
+                    charIndex = 0;
+                    setTimeout(typeWriter, 1200); 
+                }
+            }
+        }
+
+        setTimeout(typeWriter, 1000);
+
+        // --- 2. CANVAS IPOD ANIMATION ---
+        const canvas = document.getElementById('ipodCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+
+        let time = 0;
+        const notes = [];
+        const noteColors = ['#ffb3ba', '#ffdfba', '#ffffba', '#baffc9', '#bae1ff', '#ff9a9e'];
+
+        class MusicNote {
+            constructor(startX, startY) {
+                this.x = startX + (Math.random() - 0.5) * 60;
+                this.y = startY;
+                this.vy = -(Math.random() * 2 + 1);
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.size = Math.random() * 20 + 15;
+                this.opacity = 1;
+                this.symbol = ['🎵', '🎶', '♩', '♪'][Math.floor(Math.random() * 4)];
+                this.color = noteColors[Math.floor(Math.random() * noteColors.length)];
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.opacity -= 0.005; 
+                this.vx += Math.sin(this.y * 0.05) * 0.05;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.opacity);
+                ctx.font = `${this.size}px Arial`;
+                ctx.fillStyle = this.color;
+                ctx.fillText(this.symbol, this.x, this.y);
+                ctx.restore();
+            }
+        }
+
+        function drawIPod(x, y, w, h) {
+            // 1. iPod Body
+            ctx.fillStyle = '#e5e5ea'; 
+            ctx.beginPath();
+            ctx.roundRect(x - w * 0.5, y - h * 0.5, w, h, 20); 
+            ctx.fill();
+            
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#c7c7cc';
+            ctx.stroke();
+
+            // 2. iPod Screen
+            const screenW = w * 0.85;
+            const screenH = h * 0.4;
+            const screenX = x - screenW * 0.5;
+            const screenY = y - h * 0.45;
+            
+            ctx.fillStyle = '#1c1c1e';
+            ctx.beginPath();
+            ctx.roundRect(screenX, screenY, screenW, screenH, 8);
+            ctx.fill();
+
+            const gradient = ctx.createLinearGradient(screenX, screenY, screenX, screenY + screenH);
+            gradient.addColorStop(0, '#2c2c34');
+            gradient.addColorStop(1, '#111115');
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Animated Equalizer on Screen
+            const eqBars = 7;
+            const barW = screenW * 0.08;
+            const eqStartX = screenX + (screenW - (eqBars * barW + (eqBars - 1) * 5)) / 2;
+            
+            ctx.fillStyle = '#32d74b'; 
+            for(let i = 0; i < eqBars; i++) {
+                const barH = (Math.sin(time * 0.15 + i) * 0.5 + 0.5) * (screenH * 0.4) + 5;
+                ctx.fillRect(eqStartX + i * (barW + 5), screenY + screenH * 0.7 - barH, barW, barH);
+            }
+
+            // "Now Playing" text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${w*0.06}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillText('Happy B-Day', x, screenY + screenH * 0.25);
+            ctx.font = `${w*0.045}px Arial`;
+            ctx.fillStyle = '#a1a1a6';
+            ctx.fillText('Good Vibes', x, screenY + screenH * 0.85);
+
+            // 3. Click Wheel
+            const wheelR = w * 0.35;
+            const wheelX = x;
+            const wheelY = y + h * 0.25;
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(wheelX, wheelY, wheelR, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#e5e5ea';
+            ctx.beginPath();
+            ctx.arc(wheelX, wheelY, wheelR * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Click Wheel Icons
+            ctx.fillStyle = '#8e8e93';
+            ctx.font = `bold ${w*0.06}px Arial`;
+            ctx.textBaseline = 'middle';
+            
+            ctx.fillText('MENU', wheelX, wheelY - wheelR * 0.65);
+            ctx.fillText('▶ ||', wheelX, wheelY + wheelR * 0.65);
+            ctx.fillText('<<', wheelX - wheelR * 0.65, wheelY);
+            ctx.fillText('>>', wheelX + wheelR * 0.65, wheelY);
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            time++;
+
+            // Set responsive dimensions
+            const ipodWidth = Math.min(canvas.width * 0.6, 220);
+            const ipodHeight = ipodWidth * 1.6;
+            const rX = canvas.width / 2;
+            const rY = canvas.height / 2 + 20;
+
+            drawIPod(rX, rY, ipodWidth, ipodHeight);
+
+            // Floating notes
+            if (Math.random() < 0.15) {
+                notes.push(new MusicNote(rX, rY - ipodHeight * 0.5));
+            }
+
+            for (let i = notes.length - 1; i >= 0; i--) {
+                notes[i].update();
+                notes[i].draw();
+                if (notes[i].opacity <= 0) {
+                    notes.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        });
+
+        // Start animation loop
+        animate();
+
+    </script>
+</body>
+</html>
